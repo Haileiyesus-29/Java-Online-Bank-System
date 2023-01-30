@@ -1,11 +1,10 @@
 import java.util.*;
-
 public class User extends Account {
     Scanner sc = new Scanner(System.in);
     private final int account;
     private int balance;
     private int credit;
-    private ArrayList<String> history;
+    private final ArrayList<String> history;
 
     public User() {
         this.history = new ArrayList<>();
@@ -13,7 +12,6 @@ public class User extends Account {
         this.credit = 0;
         System.out.println("Enter Account Number");
         this.account = sc.nextInt();
-        sc.nextLine();
         sc.nextLine();
     }
 
@@ -42,7 +40,7 @@ public class User extends Account {
         return history;
     }
 
-    public void pushHistory(String history) {
+    public void addHistory(String history) {
         this.history.add(history);
     }
 }

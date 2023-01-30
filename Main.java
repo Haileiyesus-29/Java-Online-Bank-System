@@ -1,8 +1,11 @@
 import java.util.*;
+import java.time.*;
+
 public class Main {
     static Scanner sc = new Scanner(System.in);
-    private static ArrayList<User> users = new ArrayList<>();
-    private static ArrayList<Cashier> cashiers = new ArrayList<>();
+    private static final ArrayList<User> users = new ArrayList<>();
+    private static final ArrayList<Cashier> cashiers = new ArrayList<>();
+    static private double USD = 53, EUR = 58, GBP= 63;
 
     public static void main(String[] args) {
         boolean exit = false;
@@ -34,6 +37,7 @@ public class Main {
         System.out.println("Enter your account number");
         account = sc.nextInt();
         System.out.println("Enter your password");
+        sc.nextLine();
         password = sc.nextLine();
         int index = userValidator(account, password);
         if(index != -1) userMenu(users.get(index));
@@ -51,15 +55,15 @@ public class Main {
                 4. Transaction history
                 5. Today's currency
                 
-                0. Go back
+                0. LOG OUT
                 Enter your choice...\s""");
             int choice = sc.nextInt();
             switch (choice){
                 case 1 -> transferMoney(user);
                 case 2 -> getBalance(user);
                 case 3 -> debitMoney(user);
-                case 4 -> System.out.println("Transaction history");
-                case 5 -> System.out.println("currency");
+                case 4 -> getAccHistory(user);
+                case 5 -> getCurrency();
                 case 0 -> exit = true;
                 default -> System.out.println("Invalid input!");
             }
@@ -89,7 +93,7 @@ public class Main {
                 5. Today's currency
                 6. Create new account
                 7. Get account data
-                0. Go back
+                0. LOG OUT
                 Enter your choice...\s""");
             int option = sc.nextInt();
             switch (option) {
@@ -109,7 +113,7 @@ public class Main {
                     User user = cashierAccountFinder();
                     if(user != null) withdrawMoney(user);
                 }
-                case 5 -> System.out.println("currency");
+                case 5 -> getCurrency();
                 case 6 -> createCustomerAccount();
                 case 7 -> {
                     User user = cashierAccountFinder();
@@ -118,6 +122,17 @@ public class Main {
                 case 0 -> exit = true;
                 default -> System.out.println("Invalid input!");
             }
+        }
+    }
+
+    private static void getAccHistory(User user){
+        ArrayList<String> history = user.getHistory();
+        if(history.size() == 0){
+            System.out.println("No transactions made");
+            return;
+        }
+        for (String s : history) {
+            System.out.println(s);
         }
     }
     private static void getBalance(User user){
@@ -139,6 +154,10 @@ public class Main {
     }
     private static void createCustomerAccount(){
         User user = new User();
+        if(searchUser(user.getAccount()) != -1){
+            System.out.println("This account number is already in use.\n please try again..");
+            return;
+        }
         users.add(user);
         System.out.println("Successfully added new customer to the system");
     }
@@ -147,7 +166,9 @@ public class Main {
         int amount = sc.nextInt();
         if(user.getBalance() >= amount) {
             user.setBalance(user.getBalance() - amount);
-            System.out.println("Successfully withdrew " + amount + "birr");
+            System.out.println("Successfully withdrew " + amount + " birr");
+            String date = LocalDate.now().toString();
+            user.addHistory(amount + " birr withdrawn on " + date);
         } else System.out.println("the account doesn't have enough money");
     }
     private static void debitMoney(User user){
@@ -156,7 +177,9 @@ public class Main {
         if((totalDeposit() - totalDebited()) > amount && user.getCredit() == 0) {
             user.setBalance(user.getBalance() + amount);
             user.setCredit(amount);
-            System.out.println(amount + "birr successfully credited to your account.");
+            System.out.println(amount + " birr successfully credited to your account.");
+            String date = LocalDateTime.now().toString();
+            user.addHistory(amount + " birr debited on " + date);
             System.out.println("Your current balance is "+ user.getBalance());
         } else System.out.println("Can't done the request right now!");
     }
@@ -164,6 +187,8 @@ public class Main {
         System.out.println("Enter the amount you want to deposit");
         int amount = sc.nextInt();
         user.setBalance(user.getBalance() + amount);
+        String date = LocalDateTime.now().toString();
+        user.addHistory(amount + " birr deposited on " + date);
         System.out.println("Successfully deposited!");
     }
     private static void transferMoney(User user){
@@ -176,6 +201,11 @@ public class Main {
             if(user.getBalance() >= amount){
                 User u = users.get(index);
                 u.setBalance(u.getBalance()+amount);
+                user.setBalance(user.getBalance() - amount);
+                String date = LocalDateTime.now().toString();
+                user.addHistory(amount + " birr transferred to account " + account + " on " + date);
+                u.addHistory(amount + " birr received from account " + account + " on " + date);
+                System.out.println("Successfully transferred " + amount + "birr to account number " + account);
             } else System.out.println("the account doesn't have sufficient amount!");
         } else System.out.println("The account doesn't exist");
     }
@@ -208,10 +238,9 @@ public class Main {
                 8. make interest money
                 9. total deposited amount
                 10. total debited amount
-                0. Go back
+                0. LOG OUT
                 Enter your choice...\s""");
             int option = sc.nextInt();
-//            sc.nextLine();
             switch (option) {
                 case 1 -> showAllCustomers();
                 case 2 -> searchCustomer();
@@ -219,7 +248,7 @@ public class Main {
                 case 4 -> addCashier();
                 case 5 -> showAllCashiers();
                 case 6 -> removeCashier();
-                case 7 -> System.out.println("manage user data");
+                case 7 -> setCurrency();
                 case 8 -> makeInterest();
                 case 9 -> System.out.println("The total amount of money deposited on the bank is " + totalDeposit());
                 case 10 -> System.out.println("The total amount of money debited on the bank is " +  totalDebited());
@@ -248,6 +277,12 @@ public class Main {
                             + "     "+u.getCredit()
             );
         }
+    }
+    private static void getCurrency(){
+        System.out.println("Today's currency");
+        System.out.println("1 USD : " + USD);
+        System.out.println("1 EUR : " + EUR);
+        System.out.println("1 GBP : " + GBP);
     }
     private static void searchCustomer(){
         int account;
@@ -284,8 +319,19 @@ public class Main {
 
     private static void addCashier(){
         Cashier cashier = new Cashier();
+        if(findCashier(cashier.getId() )!= -1){
+            System.out.println("This ID is already in use. please use a different one");
+            return;
+        }
         cashiers.add(cashier);
         System.out.println("Successfully added new cashier");
+    }
+    private static int findCashier(String id){
+        for (int i=0; i<cashiers.size(); i++){
+            if(id.equals(cashiers.get(i).getId()))
+                return i;
+        }
+        return -1;
     }
     private static void showAllCashiers(){
         if(cashiers.isEmpty()) {
@@ -356,6 +402,15 @@ public class Main {
             System.out.println("Account doesn't exist");
         }
         return null;
+    }
+    private static void setCurrency(){
+        System.out.println("Enter today's value of USD");
+        USD = sc.nextDouble();
+        System.out.println("Enter today's value of EUR");
+        EUR = sc.nextDouble();
+        System.out.println("Enter today's value of USD");
+        GBP = sc.nextDouble();
+        System.out.println("Successfully updated today's currency");
     }
     public static int searchUser(int account){
         for(int i=0; i<users.size(); i++)
